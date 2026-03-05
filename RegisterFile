@@ -1,0 +1,66 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: Nothing
+// Engineer: Nguyen Ha Nhat Quang
+// 
+// Create Date: 31.10.2025 15:15:16
+// Design Name: Simple RISCV 32-bits
+// Module Name: Register 
+// Project Name: Simple RISCV 32-bits
+// Target Devices: Unknown
+// Tool Versions: Vivado 2025.1
+// Description: [...]
+// 
+// Dependencies: [...]
+// 
+// Revision: [...]
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+module RegisterFile(clk,rst,rd1_addr,rd2_addr,waddr,wdata,we,rd1_data,rd2_data);
+    input wire          clk;
+    input wire          rst;                // Reset 
+    input wire [4:0]    rd1_addr;           // Read address 1
+    input wire [4:0]    rd2_addr;           // Read address 2
+    input wire [4:0]    waddr;              // Write address     
+    input wire [31:0]   wdata;              // Write data
+    input wire          we;                 // Write enable 
+   
+    output wire [31:0]   rd1_data;          // Read data 1        
+    output wire [31:0]   rd2_data;          // Read data 2
+    
+    parameter REG_WIDTH = 32;               // Register data witdth ~ Each register are 32-bits               
+    parameter REG_COUNT = 32;               // Define 32 registers
+    integer i;
+
+    reg [REG_WIDTH] reg_file [REG_COUNT];             // 32 x 32-bits registers
+    
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin        
+            for (i = 0; i < REG_COUNT; i = i + 1) begin    
+                reg_file[i] <= 0;           // Reset all register to 0
+            end 
+        end 
+        else begin  
+            if ((we) && (waddr!=0)) begin        // Only write if not Zero Register   
+                reg_file[waddr] <= wdata;                
+            end
+            
+            // case 1: Synchronous read (sequential), can avoid Read and Write at the same time 
+            // else begin 
+                // rd1_data <= reg_file[rd1_addr];
+                // rd2_data <= reg_file[rd2_addr];
+            // end
+            // endcase        
+        end    
+    end 
+    
+    // case 2: Asynchronous read (combinational)
+    // if read_address = 0 (read at zero register), return 0
+    // if write and read at the same register (same address), Write first, if not, read as normally
+    assign rd1_data = (rd1_addr == 0) ? 32'b0 : (we && rd1_addr == waddr) ? wdata : reg_file[rd1_addr];
+    assign rd2_data = (rd2_addr == 0) ? 32'b0 : (we && rd2_addr == waddr) ? wdata : reg_file[rd2_addr];
+    // endcase   
+endmodule
